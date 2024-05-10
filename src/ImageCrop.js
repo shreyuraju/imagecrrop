@@ -54,11 +54,24 @@ const ImageCrop = () => {
         setImage(null);
         setCroppedImage(null);
         setCrop({ aspect: 9 / 16 });
+    
+        // Get the canvas element from ref
         const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+        // Ensure canvas and its context exist before clearing
+        if (canvas) {
+            // Set the canvas size to match its parent container (if needed)
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+    
+            // Get the 2D context of the canvas
+            const ctx = canvas.getContext('2d');
+    
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
     }
-
+    
     useEffect(() => {
         if (!croppedImage || !imgRef.current) return;
 
