@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback, useEffect } from 'react'
 import ReactCrop from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 const ImageCrop = () => {
 
@@ -9,25 +10,27 @@ const ImageCrop = () => {
 
     const [image, setImage] = useState(null);
 
-    const [crop, setCrop] = useState({ aspect: 9 / 16 });
+    const [crop, setCrop] = useState({ aspect: 1 }); // or any other desired aspect ratio
 
     const [croppedImage, setCroppedImage] = useState(null);
 
     const handleImageChanged = (event) => {
-
         const { files } = event.target;
-        if (files || files.length > 0) {
+        if (files && files.length > 0) {
             const reader = new FileReader();
             reader.readAsDataURL(files[0]);
             reader.addEventListener("load", () => {
                 setImage(reader.result);
-                // console.log(reader.result);
 
+                const img = new Image();
+                img.src = reader.result;
+                img.onload = () => {
+                    setCrop({ aspect: img.width / img.height });
+                };
             });
         }
-        // console.log(image);
     };
-    console.log(croppedImage);
+
 
     const handleOnLoad = useCallback((event) => {
         imgRef.current = event.target; // Set imgRef after image loads
@@ -58,7 +61,6 @@ const ImageCrop = () => {
 
     useEffect(() => {
         if (!croppedImage || !imgRef.current) return;
-        console.log(imgRef.current);
 
         const canvas = canvasRef.current;
         const rc_image = imgRef.current;
@@ -86,8 +88,8 @@ const ImageCrop = () => {
 
         ctx.drawImage(
             rc_image,
-            crop.x,
-            crop.y,
+            crop.x * scaleX,
+            crop.y * scaleY,
             dImgWid,
             dImgHei,
             0,
@@ -95,8 +97,7 @@ const ImageCrop = () => {
             dImgWid,
             dImgHei
         );
-        // console.log(canvas.toDataURL());
-    }, [croppedImage])
+    }, [croppedImage]);
 
     return (
         <div>
@@ -108,25 +109,37 @@ const ImageCrop = () => {
                     onChange={(e) => handleImageChanged(e)}
                 />
                 <button onClick={clear}>Clear</button>
+                {croppedImage && <button onClick={saveImage}>Save</button>}
             </div>
             <div>
                 {image &&
                     <ReactCrop
                         crop={crop}
                         onChange={(c) => setCrop(c)}
-                        onComplete={(c) => setCroppedImage(c)}
-
+                        onComplete={(c) => {
+                            setCroppedImage(c);
+                        }}
+                        minWidth={100}
+                        minHeight={100}
+                        grid={[10, 10]}
                     >
-                        <img src={image} alt="Crop me" onLoad={handleOnLoad} />
+                        <img
+                            src={image}
+                            alt="Crop me"
+                            onLoad={handleOnLoad}
+                            style={{
+                                width: '100%',
+                                height: '100%'
+                            }}
+                        />
                     </ReactCrop>
+
                 }
             </div>
             <div>
                 {croppedImage && (
                     <>
                         <canvas ref={canvasRef}></canvas>
-                        <button onClick={saveImage}>Save</button>
-
                     </>
                 )}
             </div>
