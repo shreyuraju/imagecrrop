@@ -38,7 +38,7 @@ const ImageCrop = () => {
         imgRef.current = event.target;
     }, []);
 
-    const saveImage = (fileName) => {
+    const saveImage = (fileName, i) => {
         if (!croppedImage || !canvasRef.current) return;
 
         canvasRef.current.toBlob((blob) => {
@@ -49,19 +49,46 @@ const ImageCrop = () => {
             link.click();
             window.URL.revokeObjectURL(url);
         });
+        clear(i)
     };
 
-    const clear = () => {
+    const clear = (index) => {
         setImage(null);
         setCroppedImage(null);
-        setCrop({ aspect: 9 / 16 });
-        setAnchorEls([null, null]); // Reset all anchorEls
+        setCrop({ aspect: 1 });
+        const newPopovers = [...popovers];
+        newPopovers[index] = false;
+        setPopovers(newPopovers);
+        const fileInput = document.getElementById(`fileInput${index}`);
+        if (fileInput) {
+            fileInput.value = '';
+        }
+        if (canvasRef.current) {
+            const canvas = canvasRef.current;
+            canvas.width = 0; // Clear the canvas
+            canvas.height = 0; // Clear the canvas
+        }
     };
 
     const handleClose = (index) => {
         const newPopovers = [...popovers];
-        newPopovers[index] = false; // Close the popover for the clicked button
+        newPopovers[index] = false;
         setPopovers(newPopovers);
+        const newAnchorEls = [...anchorEls];
+        newAnchorEls[index] = null;
+        setAnchorEls(newAnchorEls);
+        clear(index);
+    };
+
+    const handleButtonClick = (event, index) => {
+        const newPopovers = [...popovers];
+        newPopovers[index] = true;
+        setPopovers(newPopovers);
+        const newAnchorEls = [...anchorEls];
+        newAnchorEls[index] = event.currentTarget;
+        setAnchorEls(newAnchorEls);
+        const fileInput = document.getElementById(`fileInput${index}`);
+        if (fileInput) fileInput.click();
     };
 
     useEffect(() => {
@@ -95,141 +122,137 @@ const ImageCrop = () => {
     }, [croppedImage]);
 
     return (
-        <>
-            <div>
-                <Button
-                    variant="contained"
-                    onClick={(e) => { const newPopovers = [...popovers]; newPopovers[0] = true; setPopovers(newPopovers); document.getElementById('fileInput1').click(); }}
-                >
-                    Upload Option 1 Image
-                </Button>
-                <input
-                    type="file"
-                    id="fileInput1"
-                    accept="image/*"
-                    onChange={(e) => handleImageChanged(0, e)}
-                    hidden
-                />
-                <Popover
-                    open={popovers[0]}
-                    anchorEl={anchorEls[0]}
-                    onClose={() => handleClose(0)}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'left',
-                    }}
-                >
-                      <Typography sx={{ p: 2, maxWidth: 700 }}>
+        <div>
+            <Button
+                variant="contained"
+                onClick={(e) => handleButtonClick(e, 0)}
+            >
+                Upload Question Image
+            </Button>
+            <input
+                type="file"
+                id="fileInput0"
+                accept="image/*"
+                onChange={(e) => handleImageChanged(0, e)}
+                hidden
+            />
+            <Popover
+                open={popovers[0]}
+                anchorEl={anchorEls[0]}
+                onClose={() => handleClose(0)}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+            >
+                <Typography sx={{ p: 2, maxWidth: 1440 }}>
+                    <div>
                         <div>
-                            <div>
-                                <button onClick={clear}>Clear</button>
-                                {croppedImage && (
-                                    <button onClick={() => saveImage('option1')}>
-                                        Upload Crop
-                                    </button>
+                            <Button onClick={() => clear(0)}>Clear</Button>
+                            {croppedImage && (
+                                <Button onClick={() => saveImage('quesImg',0)}>
+                                    Upload Crop
+                                </Button>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', overflow: 'hidden' }}>
+                            <div style={{ width: '200%', position: 'relative' }}>
+                                {image && (
+                                    <ReactCrop
+                                        crop={crop}
+                                        onChange={setCrop}
+                                        onComplete={setCroppedImage}
+                                        // minWidth={100}
+                                        // minHeight={100}
+                                        grid={[10, 10]}
+                                        style={{ width: '100%', height: 'auto' }}
+                                    >
+                                        <img
+                                            src={image}
+                                            alt="Crop me"
+                                            onLoad={handleOnLoad}
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                    </ReactCrop>
                                 )}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', maxHeight: '300px', overflow: 'hidden', maxWidth: '700px' }}>
-                                <div style={{ width: '80%', position: 'relative' }}>
-                                    {image && (
-                                        <ReactCrop
-                                            crop={crop}
-                                            onChange={setCrop}
-                                            onComplete={setCroppedImage}
-                                            minWidth={100}
-                                            minHeight={100}
-                                            grid={[10, 10]}
-                                            style={{ width: '100%', height: 'auto' }}
-                                        >
-                                            <img
-                                                src={image}
-                                                alt="Crop me"
-                                                onLoad={handleOnLoad}
-                                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                        </ReactCrop>
-                                    )}
-                                </div>
-                                <div style={{ width: '20%', maxWidth: '140px', overflow: 'hidden', marginLeft: '10px', position: 'relative' }}>
+                            <div style={{ width: '60%', overflow: 'hidden', marginLeft: '10px', position: 'relative' }}>
 
-                                    {croppedImage && <>Cropped Image<canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }}></canvas></>}
-                                </div>
+                                {croppedImage && <>Cropped Image<canvas ref={(canvas) => { canvasRef.current = canvas; }} style={{ width: '100%', height: 'auto' }}></canvas></>}
                             </div>
                         </div>
-                    </Typography>
-                </Popover>
-            </div>
+                    </div>
+                </Typography>
+            </Popover>
 
-            <div>
-                <Button
-                    variant="contained"
-                    onClick={(e) => { const newPopovers = [...popovers]; newPopovers[1] = true; setPopovers(newPopovers); document.getElementById('fileInput2').click(); }}
-                >
-                    Upload Option 2 Image
-                </Button>
-                <input
-                    type="file"
-                    id="fileInput2"
-                    accept="image/*"
-                    onChange={(e) => handleImageChanged(1, e)}
-                    hidden
-                />
-                <Popover
-                    open={popovers[1]}
-                    anchorEl={anchorEls[1]}
-                    onClose={() => handleClose(1)}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'left',
-                    }}
-                >
-                     <Typography sx={{ p: 2, maxWidth: 700 }}>
+            <Button
+                variant="contained"
+                onClick={(e) => handleButtonClick(e, 1)}
+            >
+                Upload Question Image
+            </Button>
+            <input
+                type="file"
+                id="fileInput1"
+                accept="image/*"
+                onChange={(e) => handleImageChanged(1, e)}
+                hidden
+            />
+            <Popover
+                open={popovers[1]}
+                anchorEl={anchorEls[1]}
+                onClose={() => handleClose(1)}
+                anchorOrigin={{
+                    vertical: 'bottom',
+                    horizontal: 'right',
+                }}
+                transformOrigin={{
+                    vertical: 'top',
+                    horizontal: 'left',
+                }}
+            >
+                <Typography sx={{ p: 2, maxWidth: 1440 }}>
+                    <div>
                         <div>
-                            <div>
-                                <button onClick={clear}>Clear</button>
-                                {croppedImage && (
-                                    <button onClick={() => saveImage('option2')}>
-                                        Upload Crop
-                                    </button>
+                            <Button onClick={() => clear(1)}>Clear</Button>
+                            {croppedImage && (
+                                <Button onClick={() => saveImage('expImg',1)}>
+                                    Upload Crop
+                                </Button>
+                            )}
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', overflow: 'hidden' }}>
+                            <div style={{ width: '200%', position: 'relative' }}>
+                                {image && (
+                                    <ReactCrop
+                                        crop={crop}
+                                        onChange={setCrop}
+                                        onComplete={setCroppedImage}
+                                        // minWidth={100}
+                                        // minHeight={100}
+                                        grid={[10, 10]}
+                                        style={{ width: '100%', height: 'auto' }}
+                                    >
+                                        <img
+                                            src={image}
+                                            alt="Crop me"
+                                            onLoad={handleOnLoad}
+                                            style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                    </ReactCrop>
                                 )}
                             </div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', maxHeight: '300px', overflow: 'hidden', maxWidth: '700px' }}>
-                                <div style={{ width: '80%', position: 'relative' }}>
-                                    {image && (
-                                        <ReactCrop
-                                            crop={crop}
-                                            onChange={setCrop}
-                                            onComplete={setCroppedImage}
-                                            minWidth={100}
-                                            minHeight={100}
-                                            grid={[10, 10]}
-                                            style={{ width: '100%', height: 'auto' }}
-                                        >
-                                            <img
-                                                src={image}
-                                                alt="Crop me"
-                                                onLoad={handleOnLoad}
-                                                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-                                        </ReactCrop>
-                                    )}
-                                </div>
-                                <div style={{ width: '20%', maxWidth: '140px', overflow: 'hidden', marginLeft: '10px', position: 'relative' }}>
+                            <div style={{ width: '60%', overflow: 'hidden', marginLeft: '10px', position: 'relative' }}>
 
-                                    {croppedImage && <>Cropped Image<canvas ref={canvasRef} style={{ width: '100%', height: 'auto' }}></canvas></>}
-                                </div>
+                                {croppedImage && <>Cropped Image<canvas ref={(canvas) => { canvasRef.current = canvas; }} style={{ width: '100%', height: 'auto' }}></canvas></>}
                             </div>
                         </div>
-                    </Typography>
-                </Popover>
-            </div>
-        </>
+                    </div>
+                </Typography>
+            </Popover>
+        </div>
     );
 };
 
